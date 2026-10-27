@@ -6,6 +6,7 @@ using System.Windows.Media;
 using DashKey.Core;
 using DashKey.Native;
 using Drawing = System.Drawing;
+using Forms = System.Windows.Forms;
 
 namespace DashKey.Views;
 
@@ -62,8 +63,8 @@ public partial class HudWindow : Window
             return;
         }
 
-        var cursor = Drawing.Cursor.Position;
-        var screen = Drawing.Screen.FromPoint(cursor);
+        var cursor = Forms.Cursor.Position;
+        var screen = Forms.Screen.FromPoint(cursor);
         var dpiScale = Dpi.ScaleAt(cursor.X, cursor.Y);
         var maxWidthDip = screen.WorkingArea.Width / dpiScale * MaxScreenUsage;
 
