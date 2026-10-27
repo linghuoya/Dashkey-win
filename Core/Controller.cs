@@ -34,6 +34,7 @@ internal sealed class Controller : IDisposable
     private DispatcherTimer? _altTimer;
     private DispatcherTimer? _holdTimer;
     private bool _altDown;
+    private int _altTicks;
 
     /// <summary>面板是通过热键「开关」出来的：此时松开 Alt 不应该把它收起来。</summary>
     private bool _pinnedOpen;
@@ -51,6 +52,8 @@ internal sealed class Controller : IDisposable
         ReloadApps();
         ApplyTriggerSettings();
 
+        Log.Info($"[诊断] 触发配置：长按Alt={Settings.HoldAltEnabled} 时长={Settings.HoldDuration:0.##}s " +
+                 $"面板热键={Settings.PanelHotkeyEnabled} 前缀={Settings.Prefix} 图标={Settings.IconLevel}");
         Log.Info($"启动完成：{_apps.Count} 个任务栏固定项");
     }
 
@@ -155,10 +158,19 @@ internal sealed class Controller : IDisposable
 
     private void OnAltTick(object? sender, EventArgs e)
     {
-        var down = (Win32.GetAsyncKeyState(Win32.VK_MENU) & 0x8000) != 0;
+        var raw = Win32.GetAsyncKeyState(Win32.VK_MENU);
+
+        // 每 100 tick（约 3 秒）打一次心跳，用来确认 dispatcher 定时器确实在跑
+        if (++_altTicks % 100 == 0)
+        {
+            Log.Info($"[诊断] Alt 轮询 tick={_altTicks} raw=0x{raw:X4}");
+        }
+
+        var down = (raw & 0x8000) != 0;
         if (down == _altDown) return;
 
         _altDown = down;
+        Log.Info($"[诊断] Alt {(down ? "按下" : "松开")}");
 
         if (down)
         {
@@ -191,6 +203,7 @@ internal sealed class Controller : IDisposable
 
     private void OnHoldElapsed(object? sender, EventArgs e)
     {
+        Log.Info("[诊断] 长按计时到时");
         CancelHoldTimer();
         ShowHud(pinned: false);
     }
@@ -208,6 +221,8 @@ internal sealed class Controller : IDisposable
 
     private void ToggleHud()
     {
+        Log.Info("[诊断] ToggleHud 被调用");
+
         if (_hud is { IsVisible: true })
         {
             HideHud();
@@ -219,15 +234,20 @@ internal sealed class Controller : IDisposable
 
     private void ShowHud(bool pinned)
     {
+        Log.Info($"[诊断] ShowHud 进入 pinned={pinned} apps={_apps.Count}");
+
         if (_apps.Count == 0) _apps = AppScanner.Scan();
 
         _hud ??= CreateHud();
         _hud.ShowApps(_apps, Slots);
         _pinnedOpen = pinned;
+
+        Log.Info($"[诊断] ShowHud 返回 IsVisible={_hud.IsVisible}");
     }
 
     private void HideHud()
     {
+        Log.Info("[诊断] HideHud 被调用");
         _hud?.Hide();
         _pinnedOpen = false;
     }
@@ -253,6 +273,8 @@ internal sealed class Controller : IDisposable
 
     private void ShowSettings()
     {
+        Log.Info("[诊断] ShowSettings 进入");
+
         if (_settingsWindow is null)
         {
             _settingsWindow = new SettingsWindow(this);
@@ -262,6 +284,10 @@ internal sealed class Controller : IDisposable
         _settingsWindow.Show();
         _settingsWindow.WindowState = System.Windows.WindowState.Normal;
         _settingsWindow.Activate();
+
+        Log.Info($"[诊断] ShowSettings 完成 IsVisible={_settingsWindow.IsVisible} " +
+                 $"Left={_settingsWindow.Left:0} Top={_settingsWindow.Top:0} " +
+                 $"W={_settingsWindow.ActualWidth:0} H={_settingsWindow.ActualHeight:0}");
     }
 
     private static void Shutdown()

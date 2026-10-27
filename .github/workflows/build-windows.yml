@@ -24,21 +24,20 @@ on:
       - '*.csproj'
       - 'build.ps1'
   workflow_dispatch:
+    inputs:
+      runtime:
+        description: '目标架构（默认 win-x86；临时需要 x64 时手动选）'
+        required: false
+        type: choice
+        default: win-x86
+        options:
+          - win-x86
+          - win-x64
+          - win-arm64
 
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # 轻量版：依赖目标机已装 .NET 8 桌面运行时
-          - runtime: win-x64
-            selfcontained: 'false'
-          # 便携版：自带运行时，免装 .NET（ARM64 机器没有现成运行时可选，只能自带）
-          - runtime: win-arm64
-            selfcontained: 'true'
-
     steps:
       - uses: actions/checkout@v5
 
@@ -46,11 +45,12 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # 目前只出 win-x86 单架构。push 触发时 inputs.runtime 为空，回落到 win-x86。
       - name: Publish
-        run: ./build.ps1 -Runtime ${{ matrix.runtime }} -SelfContained:$${{ matrix.selfcontained }}
+        run: ./build.ps1 -Runtime ${{ github.event.inputs.runtime || 'win-x86' }} -SelfContained
 
       - uses: actions/upload-artifact@v6
         with:
-          name: DashKey-${{ matrix.runtime }}
-          path: Build/DashKey-${{ matrix.runtime }}/DashKey.exe
+          name: DashKey-${{ github.event.inputs.runtime || 'win-x86' }}
+          path: Build/DashKey-${{ github.event.inputs.runtime || 'win-x86' }}/DashKey.exe
           if-no-files-found: error

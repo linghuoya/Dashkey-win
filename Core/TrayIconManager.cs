@@ -18,10 +18,10 @@ internal sealed class TrayIconManager : IDisposable
             ShowImageMargin = false,
         };
 
-        _menu.Items.Add("设置…", null, (_, _) => onSettings());
-        _menu.Items.Add("重新读取任务栏固定项", null, (_, _) => onReload());
+        _menu.Items.Add("设置…", null, (_, _) => { Log.Info("[诊断] 托盘菜单：设置"); onSettings(); });
+        _menu.Items.Add("重新读取任务栏固定项", null, (_, _) => { Log.Info("[诊断] 托盘菜单：重新读取"); onReload(); });
         _menu.Items.Add(new Forms.ToolStripSeparator());
-        _menu.Items.Add("退出", null, (_, _) => onExit());
+        _menu.Items.Add("退出", null, (_, _) => { Log.Info("[诊断] 托盘菜单：退出"); onExit(); });
 
         _icon = new Forms.NotifyIcon
         {
@@ -32,7 +32,7 @@ internal sealed class TrayIconManager : IDisposable
         };
 
         // 左键双击直接开关面板，右键出菜单
-        _icon.MouseDoubleClick += (_, _) => onToggle();
+        _icon.MouseDoubleClick += (_, _) => { Log.Info("[诊断] 托盘图标双击"); onToggle(); };
     }
 
     private static Drawing.Icon LoadIcon()

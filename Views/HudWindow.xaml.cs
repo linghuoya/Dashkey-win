@@ -57,8 +57,11 @@ public partial class HudWindow : Window
 
     public void ShowApps(IReadOnlyList<AppEntry> apps, IReadOnlyList<string> labels)
     {
+        Log.Info($"[诊断] HudWindow.ShowApps 进入 apps={apps.Count}");
+
         if (apps.Count == 0)
         {
+            Log.Info("[诊断] 应用列表为空，HUD 直接隐藏");
             Hide();
             return;
         }
@@ -104,6 +107,10 @@ public partial class HudWindow : Window
         {
             CenterOn(screen.WorkingArea);
         }
+
+        Log.Info($"[诊断] HUD 显示完成 IsVisible={IsVisible} W={Width:0} H={Height:0} " +
+                 $"opacity={Opacity:0.##} columns={columns} scale={scale:0.00} " +
+                 $"workArea={screen.WorkingArea.Left},{screen.WorkingArea.Top} dpi={dpiScale:0.##}");
     }
 
     private static int FittedColumns(double scale, double maxWidthDip)
@@ -124,8 +131,10 @@ public partial class HudWindow : Window
         var x = workArea.Left + (workArea.Width - width) / 2;
         var y = workArea.Top + (workArea.Height - height) / 2;
 
-        Win32.SetWindowPos(hwnd, Win32.HWND_TOPMOST, x, y, 0, 0,
+        var ok = Win32.SetWindowPos(hwnd, Win32.HWND_TOPMOST, x, y, 0, 0,
             Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE | Win32.SWP_SHOWWINDOW);
+
+        Log.Info($"[诊断] HUD 定位 ok={ok} pos={x},{y} size={width}x{height} hwnd=0x{hwnd:X}");
     }
 
     private void BuildItems(IReadOnlyList<AppEntry> apps, IReadOnlyList<string> labels, int columns, double scale)
