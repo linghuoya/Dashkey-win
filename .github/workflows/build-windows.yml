@@ -1,0 +1,56 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Core/**'
+      - 'Views/**'
+      - 'Native/**'
+      - 'Assets/**'
+      - '*.cs'
+      - '*.xaml'
+      - '*.csproj'
+      - 'app.manifest'
+      - 'build.ps1'
+      - '.github/workflows/build-windows.yml'
+  pull_request:
+    paths:
+      - 'Core/**'
+      - 'Views/**'
+      - 'Native/**'
+      - '*.cs'
+      - '*.xaml'
+      - '*.csproj'
+      - 'build.ps1'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 轻量版：依赖目标机已装 .NET 8 桌面运行时
+          - runtime: win-x64
+            selfcontained: 'false'
+          # 便携版：自带运行时，免装 .NET（ARM64 机器没有现成运行时可选，只能自带）
+          - runtime: win-arm64
+            selfcontained: 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish
+        run: ./build.ps1 -Runtime ${{ matrix.runtime }} -SelfContained:$${{ matrix.selfcontained }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DashKey-${{ matrix.runtime }}
+          path: Build/DashKey-${{ matrix.runtime }}/DashKey.exe
+          if-no-files-found: error

@@ -55,3 +55,12 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# 本项目：build.ps1 发布产物
+Build/
+
+# macOS（开发机可能不是 Windows）
+.DS_Store
+
+# Visual Studio 用户文件
+*.user
