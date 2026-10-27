@@ -19,12 +19,23 @@ try {
 
     Write-Host "==> 发布 $Runtime (SelfContained=$SelfContained)"
 
-    dotnet publish .\DashKey.Windows.csproj `
-        -c Release `
-        -r $Runtime `
-        --self-contained $SelfContained.IsPresent `
-        -p:PublishSingleFile=true `
-        -o $out
+    $publishArgs = @(
+        ".\DashKey.Windows.csproj",
+        "-c", "Release",
+        "-r", $Runtime,
+        "--self-contained", $SelfContained.IsPresent,
+        "-p:PublishSingleFile=true",
+        "-o", $out
+    )
+
+    # WPF 自包含单文件必须显式要求把原生库解压到磁盘，否则启动时加载不到
+    # coreclr.dll / wpfgfx_cor3.dll 等原生依赖，表现为双击毫无反应、
+    # 连一行日志都不产生（WinExe 没有控制台，错误也看不见）。
+    if ($SelfContained) {
+        $publishArgs += "-p:IncludeNativeLibrariesForSelfExtract=true"
+    }
+
+    dotnet publish @publishArgs
 
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet publish 失败（exit $LASTEXITCODE）"

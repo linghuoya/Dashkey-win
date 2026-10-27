@@ -24,20 +24,26 @@ on:
       - '*.csproj'
       - 'build.ps1'
   workflow_dispatch:
-    inputs:
-      runtime:
-        description: '目标架构（默认 win-x64）'
-        required: false
-        type: choice
-        default: win-x64
-        options:
-          - win-x64
-          - win-x86
-          - win-arm64
 
 jobs:
   build:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 轻量版：依赖目标机已装对应架构的 .NET 8 桌面运行时
+          - runtime: win-x64
+            selfcontained: 'false'
+            suffix: ''
+          - runtime: win-arm64
+            selfcontained: 'false'
+            suffix: ''
+          # 免装运行时版：原生库改为解压到磁盘（见 build.ps1 里的说明）
+          - runtime: win-x64
+            selfcontained: 'true'
+            suffix: '-selfcontained'
+
     steps:
       - uses: actions/checkout@v5
 
@@ -45,13 +51,11 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # 单架构构建，push 触发时 github.event.inputs.runtime 为空，回落到 win-x64。
-      # 用 -SelfContained 自带运行时，避免目标机缺 .NET 8 桌面运行时导致双击无反应。
       - name: Publish
-        run: ./build.ps1 -Runtime ${{ github.event.inputs.runtime || 'win-x64' }} -SelfContained
+        run: ./build.ps1 -Runtime ${{ matrix.runtime }} -SelfContained:$${{ matrix.selfcontained }}
 
       - uses: actions/upload-artifact@v6
         with:
-          name: DashKey-${{ github.event.inputs.runtime || 'win-x64' }}
-          path: Build/DashKey-${{ github.event.inputs.runtime || 'win-x64' }}/DashKey.exe
+          name: DashKey-${{ matrix.runtime }}${{ matrix.suffix }}
+          path: Build/DashKey-${{ matrix.runtime }}/DashKey.exe
           if-no-files-found: error
