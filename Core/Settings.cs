@@ -99,9 +99,14 @@ internal static class Settings
         }
     }
 
+    /// <summary>
+    /// 当前 exe 的完整路径，用于写开机自启的 Run 键。
+    /// 单文件发布下 Assembly.Location 恒为空字符串（ChangeExtension 会得到 ".exe" 这种非法路径），
+    /// 所以退回 AppContext.BaseDirectory —— 单文件运行时它就是 exe 所在目录。
+    /// </summary>
     public static string ExecutablePath
         => Environment.ProcessPath
-           ?? Path.ChangeExtension(typeof(Settings).Assembly.Location, ".exe");
+           ?? Path.Combine(AppContext.BaseDirectory, "DashKey.exe");
 
     private static bool ReadFlag(string name, bool defaultValue)
     {
