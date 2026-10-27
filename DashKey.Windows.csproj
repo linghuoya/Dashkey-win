@@ -24,6 +24,19 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 
+  <!--
+    UseWindowsForms 会在 ImplicitUsings 打开时全局导入 System.Drawing 与 System.Windows.Forms，
+    这两个命名空间和 WPF 有大量同名类型（Brush / Color / Image / Brushes / FontFamily /
+    HorizontalAlignment / Cursors …），会导致 CS0104 二义性。
+    本项目的 WinForms 用法（托盘 NotifyIcon）和 System.Drawing 用法一律走文件内别名
+    （using Drawing = System.Drawing; / using Forms = System.Windows.Forms;），
+    因此这里把这两个全局导入去掉。
+  -->
+  <ItemGroup>
+    <Using Remove="System.Drawing" />
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
   <ItemGroup>
     <Resource Include="Assets\DashKey.ico" />
   </ItemGroup>
