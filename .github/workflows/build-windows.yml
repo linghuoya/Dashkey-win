@@ -26,13 +26,13 @@ on:
   workflow_dispatch:
     inputs:
       runtime:
-        description: '目标架构（默认 win-x86；临时需要 x64 时手动选）'
+        description: '目标架构（默认 win-x64）'
         required: false
         type: choice
-        default: win-x86
+        default: win-x64
         options:
-          - win-x86
           - win-x64
+          - win-x86
           - win-arm64
 
 jobs:
@@ -45,12 +45,13 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # 目前只出 win-x86 单架构。push 触发时 inputs.runtime 为空，回落到 win-x86。
+      # 单架构构建，push 触发时 github.event.inputs.runtime 为空，回落到 win-x64。
+      # 用 -SelfContained 自带运行时，避免目标机缺 .NET 8 桌面运行时导致双击无反应。
       - name: Publish
-        run: ./build.ps1 -Runtime ${{ github.event.inputs.runtime || 'win-x86' }} -SelfContained
+        run: ./build.ps1 -Runtime ${{ github.event.inputs.runtime || 'win-x64' }} -SelfContained
 
       - uses: actions/upload-artifact@v6
         with:
-          name: DashKey-${{ github.event.inputs.runtime || 'win-x86' }}
-          path: Build/DashKey-${{ github.event.inputs.runtime || 'win-x86' }}/DashKey.exe
+          name: DashKey-${{ github.event.inputs.runtime || 'win-x64' }}
+          path: Build/DashKey-${{ github.event.inputs.runtime || 'win-x64' }}/DashKey.exe
           if-no-files-found: error
